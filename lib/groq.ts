@@ -5,6 +5,7 @@ export interface ResearchIdea {
   id?: string;
   title: string;
   source: string;
+  sourceUrl?: string; // Link to original paper/article
   publishedDate: string; // ISO date or readable date
   category: 'biology' | 'ai' | 'bio-ai';
   trendingScore: number; // 1-10, higher = more trending
@@ -69,8 +70,20 @@ function formatDate(dateStr?: string): string {
 }
 
 export async function generateIdeas(headlines: Headline[]): Promise<ResearchIdea[]> {
-  const headlineText = headlines
-    .slice(0, 50) // Limit to avoid token limits
+  const limitedHeadlines = headlines.slice(0, 50);
+
+  // Create a map of sources to URLs for lookup
+  const sourceUrlMap = new Map<string, string>();
+  limitedHeadlines.forEach(h => {
+    if (h.url) {
+      // Use a simplified key for matching
+      const key = h.title.toLowerCase().slice(0, 50);
+      sourceUrlMap.set(key, h.url);
+      sourceUrlMap.set(h.source + h.title.slice(0, 30), h.url);
+    }
+  });
+
+  const headlineText = limitedHeadlines
     .map((h, i) => `${i + 1}. [${h.source}] [${formatDate(h.date)}] ${h.title}`)
     .join('\n');
 
@@ -98,11 +111,23 @@ export async function generateIdeas(headlines: Headline[]): Promise<ResearchIdea
     }
 
     const ideas = JSON.parse(jsonMatch[0]) as ResearchIdea[];
-    // Sort by trending score (highest first) and add unique IDs
+
+    // Sort by trending score (highest first), add unique IDs, and try to match URLs
     return ideas
       .sort((a, b) => (b.trendingScore || 5) - (a.trendingScore || 5))
       .slice(0, 10)
-      .map((idea, i) => ({ ...idea, id: `idea-${Date.now()}-${i}` }));
+      .map((idea, i) => {
+        // Try to find matching URL from headlines
+        let sourceUrl: string | undefined;
+        for (const h of limitedHeadlines) {
+          if (idea.source.toLowerCase().includes(h.source.toLowerCase().slice(0, 10)) ||
+              h.title.toLowerCase().includes(idea.source.toLowerCase().slice(0, 20))) {
+            sourceUrl = h.url;
+            break;
+          }
+        }
+        return { ...idea, id: `idea-${Date.now()}-${i}`, sourceUrl };
+      });
   } catch (error) {
     console.error('Groq API error:', error);
     // Fallback: return raw headlines as ideas
@@ -110,6 +135,7 @@ export async function generateIdeas(headlines: Headline[]): Promise<ResearchIdea
       id: `idea-${Date.now()}-${i}`,
       title: h.title,
       source: h.source,
+      sourceUrl: h.url,
       publishedDate: formatDate(h.date),
       category: (i % 3 === 0 ? 'biology' : i % 3 === 1 ? 'ai' : 'bio-ai') as 'biology' | 'ai' | 'bio-ai',
       trendingScore: 5,
