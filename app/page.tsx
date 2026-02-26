@@ -14,6 +14,15 @@ interface ResearchIdea {
   researchAngle: string;
 }
 
+interface DetailedSummary {
+  detailedSummary: string;
+  keyQuestions: string[];
+  suggestedMethods: string[];
+  potentialImpact: string;
+  relatedTopics: string[];
+  gettingStarted: string;
+}
+
 const categoryStyles = {
   biology: {
     bg: 'bg-emerald-500/10',
@@ -105,26 +114,175 @@ function LoadingSkeleton() {
   );
 }
 
+// Modal for detailed summary
+function SummaryModal({
+  idea,
+  summary,
+  loading,
+  onClose
+}: {
+  idea: ResearchIdea;
+  summary: DetailedSummary | null;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  const style = categoryStyles[idea.category] || categoryStyles['bio-ai'];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
+
+      {/* Modal */}
+      <div className="relative bg-neutral-900 rounded-2xl border border-neutral-800 max-w-2xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-neutral-800 flex-shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${style.bg} ${style.text} ${style.border}`}>
+                {style.label}
+              </span>
+              <TrendingBadge score={idea.trendingScore} />
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 text-neutral-400 hover:text-white hover:bg-neutral-800 rounded-lg transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+          <h2 className="text-xl font-bold text-white leading-tight">{idea.title}</h2>
+          <div className="flex items-center gap-3 text-sm mt-2">
+            {idea.sourceUrl ? (
+              <a href={idea.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-neutral-400 hover:text-white flex items-center gap-1">
+                {idea.source}
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            ) : (
+              <span className="text-neutral-500">{idea.source}</span>
+            )}
+            {idea.publishedDate && idea.publishedDate !== 'Unknown' && (
+              <>
+                <span className="text-neutral-700">·</span>
+                <span className="text-neutral-500">{formatDisplayDate(idea.publishedDate)}</span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-1">
+          {loading ? (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-4 bg-neutral-800 rounded w-full"></div>
+              <div className="h-4 bg-neutral-800 rounded w-5/6"></div>
+              <div className="h-4 bg-neutral-800 rounded w-4/5"></div>
+              <div className="h-4 bg-neutral-800 rounded w-full"></div>
+              <div className="h-4 bg-neutral-800 rounded w-3/4"></div>
+              <div className="mt-6 text-center text-neutral-500 text-sm">Generating detailed summary...</div>
+            </div>
+          ) : summary ? (
+            <div className="space-y-6">
+              {/* Summary */}
+              <div>
+                <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-3">Overview</h3>
+                <p className="text-neutral-300 leading-relaxed whitespace-pre-line">{summary.detailedSummary}</p>
+              </div>
+
+              {/* Key Questions */}
+              <div>
+                <h3 className="text-sm font-semibold text-sky-400 uppercase tracking-wider mb-3">Key Research Questions</h3>
+                <ul className="space-y-2">
+                  {summary.keyQuestions.map((q, i) => (
+                    <li key={i} className="flex gap-2 text-neutral-300">
+                      <span className="text-sky-400">•</span>
+                      {q}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Methods */}
+              <div>
+                <h3 className="text-sm font-semibold text-violet-400 uppercase tracking-wider mb-3">Suggested Methods</h3>
+                <ul className="space-y-2">
+                  {summary.suggestedMethods.map((m, i) => (
+                    <li key={i} className="flex gap-2 text-neutral-300">
+                      <span className="text-violet-400">•</span>
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Impact */}
+              <div>
+                <h3 className="text-sm font-semibold text-amber-400 uppercase tracking-wider mb-3">Potential Impact</h3>
+                <p className="text-neutral-300 leading-relaxed">{summary.potentialImpact}</p>
+              </div>
+
+              {/* Related Topics */}
+              <div>
+                <h3 className="text-sm font-semibold text-neutral-400 uppercase tracking-wider mb-3">Related Topics</h3>
+                <div className="flex flex-wrap gap-2">
+                  {summary.relatedTopics.map((topic, i) => (
+                    <span key={i} className="px-3 py-1.5 bg-neutral-800 text-neutral-300 rounded-lg text-sm">
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Getting Started */}
+              <div className="bg-neutral-800/50 rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-emerald-400 uppercase tracking-wider mb-2">Getting Started</h3>
+                <p className="text-neutral-300 text-sm leading-relaxed">{summary.gettingStarted}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-neutral-800/30 rounded-xl p-4">
+                <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-2">Why it matters</p>
+                <p className="text-sm text-neutral-300">{idea.whyItMatters}</p>
+              </div>
+              <div className="bg-neutral-800/30 rounded-xl p-4">
+                <p className="text-xs font-semibold text-sky-400/80 uppercase tracking-wider mb-2">Research angle</p>
+                <p className="text-sm text-neutral-300">{idea.researchAngle}</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function IdeaCard({
   idea,
   index,
   isBookmarked,
-  onToggleBookmark
+  onToggleBookmark,
+  onExpand
 }: {
   idea: ResearchIdea;
   index: number;
   isBookmarked: boolean;
   onToggleBookmark: () => void;
+  onExpand: () => void;
 }) {
   const style = categoryStyles[idea.category] || categoryStyles['bio-ai'];
 
   return (
-    <div className={`group relative bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 rounded-2xl p-6 border border-neutral-800/50 hover:border-neutral-700/50 transition-all duration-300 hover:shadow-xl hover:shadow-black/20`}>
-      {/* Subtle gradient overlay on hover */}
+    <div
+      className={`group relative bg-gradient-to-br from-neutral-900 via-neutral-900 to-neutral-950 rounded-2xl p-6 border border-neutral-800/50 hover:border-neutral-700/50 transition-all duration-300 hover:shadow-xl hover:shadow-black/20 cursor-pointer`}
+      onClick={onExpand}
+    >
       <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none`}></div>
 
       <div className="relative">
-        {/* Top row: badges and bookmark */}
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${style.bg} ${style.text} ${style.border}`}>
@@ -134,7 +292,7 @@ function IdeaCard({
             <span className="text-neutral-600 text-xs font-medium">#{index + 1}</span>
           </div>
           <button
-            onClick={onToggleBookmark}
+            onClick={(e) => { e.stopPropagation(); onToggleBookmark(); }}
             className={`p-2 rounded-xl transition-all duration-200 ${
               isBookmarked
                 ? 'text-amber-400 bg-amber-500/10 hover:bg-amber-500/20'
@@ -142,49 +300,27 @@ function IdeaCard({
             }`}
             aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill={isBookmarked ? 'currentColor' : 'none'}
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={isBookmarked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
             </svg>
           </button>
         </div>
 
-        {/* Title */}
         <h3 className="text-xl font-semibold text-white mb-3 leading-tight tracking-tight">
           {idea.title}
         </h3>
 
-        {/* Source with link */}
         <div className="flex items-center gap-3 text-sm mb-5">
           {idea.sourceUrl ? (
             <a
               href={idea.sourceUrl}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               className="text-neutral-400 hover:text-white transition-colors flex items-center gap-1.5 group/link"
             >
               <span className="font-medium">{idea.source}</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="opacity-50 group-hover/link:opacity-100 transition-opacity"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover/link:opacity-100 transition-opacity">
                 <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                 <polyline points="15 3 21 3 21 9" />
                 <line x1="10" y1="14" x2="21" y2="3" />
@@ -201,20 +337,22 @@ function IdeaCard({
           )}
         </div>
 
-        {/* Content sections */}
         <div className="space-y-4">
           <div className="bg-neutral-800/30 rounded-xl p-4">
             <p className="text-xs font-semibold text-emerald-400/80 uppercase tracking-wider mb-2">Why it matters</p>
-            <p className="text-sm text-neutral-300 leading-relaxed">
-              {idea.whyItMatters}
-            </p>
+            <p className="text-sm text-neutral-300 leading-relaxed line-clamp-2">{idea.whyItMatters}</p>
           </div>
           <div className="bg-neutral-800/30 rounded-xl p-4">
             <p className="text-xs font-semibold text-sky-400/80 uppercase tracking-wider mb-2">Research angle</p>
-            <p className="text-sm text-neutral-300 leading-relaxed">
-              {idea.researchAngle}
-            </p>
+            <p className="text-sm text-neutral-300 leading-relaxed line-clamp-2">{idea.researchAngle}</p>
           </div>
+        </div>
+
+        <div className="mt-4 flex items-center justify-center text-neutral-500 text-xs group-hover:text-neutral-400 transition-colors">
+          <span>Click to expand</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
         </div>
       </div>
     </div>
@@ -229,6 +367,11 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [bookmarks, setBookmarks] = useState<ResearchIdea[]>([]);
   const [showBookmarks, setShowBookmarks] = useState(false);
+
+  // Modal state
+  const [selectedIdea, setSelectedIdea] = useState<ResearchIdea | null>(null);
+  const [summary, setSummary] = useState<DetailedSummary | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('bioai-bookmarks');
@@ -284,6 +427,44 @@ export default function Home() {
     }
   };
 
+  const fetchSummary = async (idea: ResearchIdea) => {
+    setSummaryLoading(true);
+    setSummary(null);
+
+    try {
+      const response = await fetch('/api/summary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: idea.title,
+          source: idea.source,
+          whyItMatters: idea.whyItMatters,
+          researchAngle: idea.researchAngle,
+          category: idea.category
+        })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setSummary(data.summary);
+      }
+    } catch (err) {
+      console.error('Failed to fetch summary:', err);
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
+
+  const handleExpand = (idea: ResearchIdea) => {
+    setSelectedIdea(idea);
+    fetchSummary(idea);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedIdea(null);
+    setSummary(null);
+  };
+
   useEffect(() => {
     fetchIdeas();
   }, []);
@@ -304,11 +485,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0b]">
-      {/* Subtle grid background */}
       <div className="fixed inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none"></div>
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0a0a0b]/80 backdrop-blur-2xl border-b border-neutral-800/50">
+      <header className="sticky top-0 z-40 bg-[#0a0a0b]/80 backdrop-blur-2xl border-b border-neutral-800/50">
         <div className="max-w-3xl mx-auto px-6 py-5">
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -327,17 +506,7 @@ export default function Home() {
                 }`}
                 aria-label="View bookmarks"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill={showBookmarks ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={showBookmarks ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z" />
                 </svg>
                 {bookmarks.length > 0 && (
@@ -352,18 +521,7 @@ export default function Home() {
                 className="p-2.5 text-neutral-400 hover:text-white hover:bg-neutral-800/50 rounded-xl transition-all duration-200 disabled:opacity-50"
                 aria-label="Refresh"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className={loading ? 'animate-spin' : ''}
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={loading ? 'animate-spin' : ''}>
                   <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
                   <path d="M21 3v5h-5" />
                 </svg>
@@ -374,18 +532,7 @@ export default function Home() {
           {!showBookmarks && (
             <form onSubmit={handleSearch} className="relative">
               <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-neutral-500"
-                >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-500">
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
@@ -421,7 +568,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Content */}
       <div className="relative max-w-3xl mx-auto px-6 py-8">
         {showBookmarks ? (
           bookmarks.length === 0 ? (
@@ -443,6 +589,7 @@ export default function Home() {
                   index={index}
                   isBookmarked={true}
                   onToggleBookmark={() => toggleBookmark(idea)}
+                  onExpand={() => handleExpand(idea)}
                 />
               ))}
             </div>
@@ -472,13 +619,13 @@ export default function Home() {
                 index={index}
                 isBookmarked={isBookmarked(idea)}
                 onToggleBookmark={() => toggleBookmark(idea)}
+                onExpand={() => handleExpand(idea)}
               />
             ))}
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <footer className="border-t border-neutral-800/50 mt-12">
         <div className="max-w-3xl mx-auto px-6 py-8">
           <p className="text-center text-xs text-neutral-600">
@@ -486,6 +633,16 @@ export default function Home() {
           </p>
         </div>
       </footer>
+
+      {/* Summary Modal */}
+      {selectedIdea && (
+        <SummaryModal
+          idea={selectedIdea}
+          summary={summary}
+          loading={summaryLoading}
+          onClose={handleCloseModal}
+        />
+      )}
     </main>
   );
 }
