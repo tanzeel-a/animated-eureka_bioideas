@@ -119,12 +119,16 @@ function SummaryModal({
   idea,
   summary,
   loading,
-  onClose
+  error,
+  onClose,
+  onRetry
 }: {
   idea: ResearchIdea;
   summary: DetailedSummary | null;
   loading: boolean;
+  error: string | null;
   onClose: () => void;
+  onRetry: () => void;
 }) {
   const style = categoryStyles[idea.category] || categoryStyles['bio-ai'];
 
@@ -183,6 +187,24 @@ function SummaryModal({
               <div className="h-4 bg-neutral-800 rounded w-full"></div>
               <div className="h-4 bg-neutral-800 rounded w-3/4"></div>
               <div className="mt-6 text-center text-neutral-500 text-sm">Generating detailed summary...</div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-10">
+              <div className="w-14 h-14 bg-red-500/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-400">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <p className="text-red-400 mb-2 font-medium">{error}</p>
+              <p className="text-neutral-500 text-sm mb-6">Could not generate AI summary</p>
+              <button
+                onClick={onRetry}
+                className="px-5 py-2.5 bg-emerald-500/10 text-emerald-400 rounded-xl hover:bg-emerald-500/20 transition-colors text-sm font-medium"
+              >
+                Try Again
+              </button>
             </div>
           ) : summary ? (
             <div className="space-y-6">
@@ -372,6 +394,7 @@ export default function Home() {
   const [selectedIdea, setSelectedIdea] = useState<ResearchIdea | null>(null);
   const [summary, setSummary] = useState<DetailedSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('bioai-bookmarks');
@@ -430,6 +453,7 @@ export default function Home() {
   const fetchSummary = async (idea: ResearchIdea) => {
     setSummaryLoading(true);
     setSummary(null);
+    setSummaryError(null);
 
     try {
       const response = await fetch('/api/summary', {
@@ -445,11 +469,14 @@ export default function Home() {
       });
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.summary) {
         setSummary(data.summary);
+      } else {
+        setSummaryError(data.error || 'Failed to generate summary');
       }
     } catch (err) {
       console.error('Failed to fetch summary:', err);
+      setSummaryError('Network error. Please try again.');
     } finally {
       setSummaryLoading(false);
     }
@@ -457,12 +484,20 @@ export default function Home() {
 
   const handleExpand = (idea: ResearchIdea) => {
     setSelectedIdea(idea);
+    setSummaryError(null);
     fetchSummary(idea);
   };
 
   const handleCloseModal = () => {
     setSelectedIdea(null);
     setSummary(null);
+    setSummaryError(null);
+  };
+
+  const handleRetrySummary = () => {
+    if (selectedIdea) {
+      fetchSummary(selectedIdea);
+    }
   };
 
   useEffect(() => {
@@ -640,7 +675,9 @@ export default function Home() {
           idea={selectedIdea}
           summary={summary}
           loading={summaryLoading}
+          error={summaryError}
           onClose={handleCloseModal}
+          onRetry={handleRetrySummary}
         />
       )}
     </main>
