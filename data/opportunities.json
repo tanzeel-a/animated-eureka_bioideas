@@ -1,0 +1,24 @@
+{
+  "lastUpdated": "2026-03-13T05:48:55.148Z",
+  "opportunities": [],
+  "scrapeHistory": [
+    {
+      "jobId": "manual-1773380929013",
+      "startedAt": "2026-03-13T05:48:49.013Z",
+      "completedAt": "2026-03-13T05:48:49.013Z",
+      "opportunitiesFound": 0
+    },
+    {
+      "jobId": "manual-1773380930467",
+      "startedAt": "2026-03-13T05:48:50.467Z",
+      "completedAt": "2026-03-13T05:48:50.467Z",
+      "opportunitiesFound": 0
+    },
+    {
+      "jobId": "manual-1773380935148",
+      "startedAt": "2026-03-13T05:48:55.148Z",
+      "completedAt": "2026-03-13T05:48:55.148Z",
+      "opportunitiesFound": 0
+    }
+  ]
+}

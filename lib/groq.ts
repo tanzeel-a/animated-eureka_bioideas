@@ -1,5 +1,11 @@
 import Groq from 'groq-sdk';
 import { Headline } from './scrape';
+import { Opportunity } from './types';
+
+// Export the Groq client for use in other modules
+export const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
 export interface ResearchIdea {
   id?: string;
@@ -14,9 +20,7 @@ export interface ResearchIdea {
 }
 
 function getGroqClient() {
-  return new Groq({
-    apiKey: process.env.GROQ_API_KEY,
-  });
+  return groq;
 }
 
 const SYSTEM_PROMPT = `You are a research idea synthesizer with deep expertise in Biology and life sciences.
@@ -142,5 +146,50 @@ export async function generateIdeas(headlines: Headline[]): Promise<ResearchIdea
       whyItMatters: 'Trending topic worth exploring.',
       researchAngle: 'Investigate this emerging trend further.',
     }));
+  }
+}
+
+/**
+ * Generate a concise summary for a research opportunity
+ */
+export async function generateOpportunitySummary(opportunity: Opportunity): Promise<string> {
+  const client = getGroqClient();
+
+  const prompt = `Summarize this research position in 2-3 concise sentences. Focus on what makes this position attractive and key qualifications needed.
+
+Position: ${opportunity.title}
+Institution: ${opportunity.institution}
+Type: ${opportunity.type}
+Location: ${opportunity.location}
+${opportunity.deadline ? `Deadline: ${opportunity.deadline}` : ''}
+${opportunity.requirements?.length ? `Requirements: ${opportunity.requirements.join(', ')}` : ''}
+
+Description:
+${opportunity.description}
+
+Return ONLY the summary text, no JSON formatting or additional text.`;
+
+  try {
+    const response = await client.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that summarizes research position opportunities. Be concise, informative, and highlight key aspects that would interest potential applicants.',
+        },
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      temperature: 0.3,
+      max_tokens: 300,
+    });
+
+    const summary = response.choices[0]?.message?.content?.trim();
+    return summary || 'Unable to generate summary.';
+  } catch (error) {
+    console.error('Error generating opportunity summary:', error);
+    return 'Unable to generate summary at this time.';
   }
 }
